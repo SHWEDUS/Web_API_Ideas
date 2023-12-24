@@ -151,7 +151,7 @@
         populateQueriesList();
         let client_id = Math.floor(Math.random() * 1000) + 1
         document.querySelector("#ws-id").textContent = client_id;
-        let ws = new WebSocket(`wss://{{ server_urn }}/ws/${client_id}`);
+        let ws = new WebSocket(`{{ ws_protocol }}://{{ server_urn }}/ws/${client_id}`);
 	</script>
 </body>
 
