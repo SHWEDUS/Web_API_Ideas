@@ -18,8 +18,11 @@
                 <input type="text" id="description" autocomplete="off" required />
 
                 <label for="direction">Направление:</label>
-                <select id="direction" required></select>
-
+                <select id="direction" required>
+                  {% for direction in directions %}
+                      <option value="{{ direction.id }}">{{ direction.name }}</option>
+                  {% endfor %}
+                </select>
                 <label for="effect">Эффект:</label>
                 <input type="text" id="effect" autocomplete="off" required />
 
@@ -35,7 +38,17 @@
                 <button style="margin-top: 5px" type="submit">Добавить направление</button>
             </form>
         </div>
-		<ul id='queries'> </ul>
+    <ul id='queries'>
+    {% for query in queries %}
+        {% set directionName = directions | selectattr("id", "equalto", query.initiative_direction) | map(attribute="name") | first %}
+        <li>
+            Инициатива: {{ query.name }},
+            Описание: {{ query.description }},
+            Направление: {{ directionName | default('Направление не найдено') }},
+            Эффект: {{ query.implementation_effect }},
+        </li>
+    {% endfor %}
+</ul>
 	</div>
 	<script>
         function sendDirection(event) {
@@ -59,7 +72,6 @@
                 .then(response => response.json())
                 .then(result => {
                     console.log('Success:', result);
-                    populateDirectionsSelect();
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -68,44 +80,6 @@
             // Очистка полей формы
             document.getElementById("directionName").value = '';
             document.getElementById("directionDescription").value = '';
-        }
-
-        function populateDirectionsSelect() {
-            let directionSelect = document.getElementById('direction');
-            directionSelect.innerHTML = '';
-
-            fetch('/directions')
-                    .then(response => response.json())
-                    .then(directions => {
-                        directions.forEach(direction => {
-                            let option = document.createElement('option');
-                            option.value = direction.id;
-                            option.text = direction.name;
-                            directionSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Ошибка при получении направлений:', error));
-        }
-
-        function populateQueriesList() {
-            let queriesList = document.getElementById('queries');
-            queriesList.innerHTML = '';
-
-            fetch('/queries')
-                    .then(response => response.json())
-                    .then(queries => {
-                        queries.forEach(async query => {
-                            // Отправляем запрос для получения имени направления по его идентификатору
-                            const directionResponse = await fetch(`/directions/${query.initiative_direction}`);
-                            const directionData = await directionResponse.json();
-                            const directionName = directionData.name;
-
-                            let listItem = document.createElement('li');
-                            listItem.textContent = `Инициатива: ${query.name}, Описание: ${query.description}, Направление: ${directionName}, Эффект: ${query.implementation_effect}`;
-                            queriesList.appendChild(listItem);
-                        });
-                    })
-                    .catch(error => console.error('Ошибка при получении инициатив:', error));
         }
 
         function sendQuery(event) {
@@ -133,7 +107,6 @@
                     .then(response => response.json())
                     .then(result => {
                         console.log('Success:', result);
-                        populateQueriesList();
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -146,9 +119,6 @@
             document.getElementById("effect").value = '';
         }
 
-        // Вызов функции для заполнения селекта направлений при загрузке страницы
-        populateDirectionsSelect();
-        populateQueriesList();
         let client_id = Math.floor(Math.random() * 1000) + 1
         document.querySelector("#ws-id").textContent = client_id;
         let ws = new WebSocket(`{{ ws_protocol }}://{{ server_urn }}/ws/${client_id}`);
